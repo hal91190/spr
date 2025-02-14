@@ -1,0 +1,9 @@
+{
+"students" : "Liste_Inscrits_MIN17201_Programmation,_GL_et_Preuve.csv",
+"grades" : "solid-grades-1739355907.csv",
+"evaluations" : "pglp-solid.csv",
+"environment" : {"JAVA_HOME": "/usr/lib/jvm/java-22-openjdk-amd64/"},
+"commands" : [
+    ["./mvnw", "validate"]
+]
+}

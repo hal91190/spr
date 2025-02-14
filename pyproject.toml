@@ -1,0 +1,20 @@
+[project]
+name = "spr"
+version = "0.1.0"
+description = "A script to evaluate a set of student git repositories."
+authors = [{ name = "Stéphane LOPES", email = "stephane.lopes@uvsq.fr" }]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "gitpython>=3.1",
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project.scripts]
+spr = "spr.spr:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
