@@ -29,14 +29,12 @@ class Grade:
         """
         logger = logging.getLogger(__name__)
         identifier = self.roster_identifier.split(",")
+        number, firstname, lastname = "NO_NUMBER", "NO_FIRSTNAME", "NO_LASTNAME"
         if len(identifier) < 2:
             logger.warning(
                 "Not enough information in roster identifier [%s]",
                 self.roster_identifier,
             )
-            lastname = "NO_LASTNAME"
-            firstname = "NO_FISRTNAME"
-            number = "NO_NUMBER"
         else:
             assert len(identifier) <= 3
             lastname = identifier[0]
@@ -46,7 +44,6 @@ class Grade:
                     "No student number in roster identifier [%s]",
                     self.roster_identifier,
                 )
-                number = "NO_NUMBER"
             else:
                 number = identifier[2]
         logger.debug("Student extracted (%s, %s, %s)", number, lastname, firstname)

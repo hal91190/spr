@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
 
-"""A script to evaluate a set of student repositories.
-
-Requirements:
-  GitPython
-
-Usage::
-
-./spr.py
-python3 -m ruff check spr.py
-python3 -m mypy spr.py
-python3 -m ruff format spr.py
-"""
+"""A script to evaluate a set of student repositories."""
 
 import logging
 

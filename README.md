@@ -22,6 +22,6 @@ source .venv/bin/activate
 
 ### Build et installation
 ```bash
-uv build
-pipx install .
+scripts/pre_build.py
+uv build && pipx install . --force
 ```

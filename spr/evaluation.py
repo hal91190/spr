@@ -4,12 +4,12 @@ import logging
 import csv
 import os
 import subprocess
-
-from git import Repo
+import datetime
 
 from spr.config import CONFIG
 from spr.student import Student
 from spr.grade import Grade
+from spr.cistats import collect_commits_stats_from_repository
 
 
 @dataclass(frozen=True)
@@ -37,6 +37,21 @@ class Evaluation:
     nb_commits: int
     "Number of commits"
 
+    first_commit_datetime: datetime.datetime
+    "Timestamp of the first commit"
+
+    last_commit_datetime: datetime.datetime
+    "Timestamp of the last commit"
+
+    min_time_between_commits: int
+    "Minimum time between 2 commits (s)"
+
+    avg_time_between_commits: int
+    "Average time between 2 commits (s)"
+
+    avg_msg_length: int
+    "Average length of commit messages"
+
     evaluation: int
     "Result of the evaluation"
 
@@ -59,33 +74,11 @@ def evaluate_repositories(
     logger = logging.getLogger(__name__)
     evaluations = []
     for grade in grades:
-        # match grade with student list
-        student_from_grade = grade.extract_student()
-        matching_students = list(
-            filter(lambda s: s.number == student_from_grade.number, students)
-        )
-        if len(matching_students) == 0:
-            logger.warning("No matching student for %s", student_from_grade)
-        elif len(matching_students) > 1:  # many matching students
-            logger.warning(
-                "More than one matching student for %s : %s",
-                student_from_grade,
-                matching_students,
-            )
-        else:  # OK, only one student
-            student = matching_students[0]
-            logger.debug("Matching found for %s : %s", student_from_grade, student)
+        student = find_student_with_grade(grade, students)
         # evaluate repository
         repository_path = grade.repository_name
         if os.path.isdir(repository_path):
-            repository = Repo(repository_path)
-            nb_commits = len(list(repository.iter_commits("main")))
-            logger.info(
-                "Evaluating repository %s (%d commits) for %s",
-                repository_path,
-                nb_commits,
-                student_from_grade,
-            )
+            ci_stats = collect_commits_stats_from_repository(repository_path)
             current_working_directory = os.getcwd()
             os.chdir(repository_path)
             environment = os.environ.copy() | CONFIG.environment
@@ -104,16 +97,21 @@ def evaluate_repositories(
                     repository_path,
                     completed_process.returncode,
                 )
-            logger.info("Result for %s = %d", student_from_grade, result)
+            logger.info("Result for %s = %d", student, result)
             evaluations.append(
                 Evaluation(
-                    student_from_grade.number,
-                    student_from_grade.lastname,
-                    student_from_grade.firstname,
+                    student.number if student else "NO_NUMBER",
+                    student.lastname if student else "NO_LASTNAME",
+                    student.firstname if student else "NO_FIRSTNAME",
                     grade.github_username,
                     grade.repository_name,
                     grade.repository_url,
-                    nb_commits,
+                    ci_stats.nb_commits,
+                    ci_stats.first_commit_datetime,
+                    ci_stats.last_commit_datetime,
+                    ci_stats.min_time_between_commits,
+                    ci_stats.avg_time_between_commits,
+                    ci_stats.avg_msg_length,
                     result,
                 )
             )
@@ -123,7 +121,30 @@ def evaluate_repositories(
     return evaluations
 
 
+def find_student_with_grade(grade: Grade, students: list[Student]) -> Student | None:
+    """Find a student in the list of students from the identifier in the grade."""
+    logger = logging.getLogger(__name__)
+    # match grade with student list
+    student_from_grade = grade.extract_student()
+    matching_students = list(
+        filter(lambda s: s.number == student_from_grade.number, students)
+    )
+    student = None
+    if len(matching_students) == 0:
+        logger.warning("No matching student for %s", student_from_grade)
+    elif len(matching_students) > 1:  # many matching students
+        logger.warning(
+            "More than one matching student for %s : %s",
+            student_from_grade,
+            matching_students,
+        )
+    else:  # OK, only one student
+        student = matching_students[0]
+        logger.debug("Matching found for %s : %s", student_from_grade, student)
+    return student
+
+
 def write_evaluations(evaluations: list[Evaluation], evaluations_filename: str) -> None:
     with open(evaluations_filename, "w", newline="") as evaluations_file:
         evaluations_writer = csv.writer(evaluations_file)
-        evaluations_writer.writerows(evaluations)
+        evaluations_writer.writerows(evaluations)  # type: ignore
