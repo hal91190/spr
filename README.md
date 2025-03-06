@@ -1,7 +1,27 @@
 # spr
-A script to evaluate a set of student git repositories.
+Un script pour évaluer un ensemble de dépôts git.
+
+Le projet est géré avec [uv](https://docs.astral.sh/uv/).
 
 ## Usage
 ```bash
-./spr.py
+spr
+```
+
+## Packaging
+
+### Création de l'environnement virtuel
+```bash
+uv venv
+```
+
+### Activation de l'environnement virtuel
+```bash
+source .venv/bin/activate
+```
+
+### Build et installation
+```bash
+uv build
+pipx install .
 ```
