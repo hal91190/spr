@@ -56,11 +56,11 @@ class Evaluation:
     avg_msg_length: int
     "Average length of commit messages"
 
-    evaluation: int
-    "Result of the evaluation"
+    evaluations: list[int]
+    "Result of the evaluations"
 
     def __init__(
-        self, student: Student, grade: Grade, ci_stats: CommitsStats, result: int
+        self, student: Student, grade: Grade, ci_stats: CommitsStats, result: list[int]
     ):
         """Create an evaluation from a student, a grade, stats about commits and a result."""
         self.number = student.number
@@ -75,7 +75,7 @@ class Evaluation:
         self.min_time_between_commits = ci_stats.min_time_between_commits
         self.avg_time_between_commits = ci_stats.avg_time_between_commits
         self.avg_msg_length = ci_stats.avg_msg_length
-        self.evaluation = result
+        self.evaluations = result
 
     def __getitem__(self, index: int) -> Any:
         """Access to attributes by index.
@@ -86,7 +86,9 @@ class Evaluation:
         Returns:
             Any: the value of the attribute
         """
-        return list(vars(self).values())[index]
+        attributes = {k: v for k, v in vars(self).items() if k != "evaluations"}
+        values = list(attributes.values()) + self.evaluations
+        return values[index]
 
 
 def evaluate_repositories(
@@ -107,16 +109,16 @@ def evaluate_repositories(
     return evaluations
 
 
-def evaluate_repository(student: Student, repository_path: str) -> int:
+def evaluate_repository(student: Student, repository_path: str) -> list[int]:
     """Run a list of commands in a repository and return the number of successful commands."""
     logger = logging.getLogger(__name__)
     current_working_directory = os.getcwd()
     os.chdir(repository_path)
     environment = os.environ.copy() | CONFIG.environment
-    result = 0
+    result = []
     for command in CONFIG.commands:
-        result += execute_command(command, environment)
-    logger.info("Result for %s = %d", student, result)
+        result.append(execute_command(command, environment))
+    logger.info("Result for %s = %s", student, result)
     os.chdir(current_working_directory)
     return result
 
