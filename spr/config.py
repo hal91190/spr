@@ -1,3 +1,4 @@
+from typing import Any
 from dataclasses import dataclass
 import json
 
@@ -20,7 +21,7 @@ class Config:
     environment: dict[str, str]
     "List of environment variables"
 
-    commands: list[list[str]]
+    commands: list[dict[str, Any]]
     "List of commands to execute to evaluate each repository"
 
 

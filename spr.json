@@ -1,9 +1,20 @@
 {
-"students" : "Liste_Inscrits_MIN17201_Programmation,_GL_et_Preuve.csv",
-"grades" : "solid-grades-1739355907.csv",
-"evaluations" : "pglp-solid.csv",
-"environment" : {"JAVA_HOME": "/usr/lib/jvm/java-22-openjdk-amd64/"},
-"commands" : [
-    ["./mvnw", "validate"]
-]
+    "students" : "Liste_Inscrits_MIN17201_Programmation,_GL_et_Preuve.csv",
+    "grades" : "builder-rpg-grades-1741255232-small.csv",
+    "evaluations" : "builder-rpg.csv",
+    "environment" : {"JAVA_HOME": "/usr/lib/jvm/java-22-openjdk-amd64/"},
+    "commands" : [
+        {"name": "mvn", "cmd": ["./mvnw", "clean", "package", "-Dcheckstyle.skip", "-DskipTests"], "regex": ""},
+        {"name": "checkstyle", "cmd": ["./mvnw", "validate"], "regex": ""},
+        {
+            "name": "chartest",
+            "cmd": ["./mvnw", "test", "-Dtest=CharacterTest", "-Dcheckstyle.skip"],
+            "regex": "Tests run: (\\d+), Failures: (\\d+), Errors: (\\d+), Skipped: (\\d+)$"
+        },
+        {
+            "name": "buildtest",
+            "cmd": ["./mvnw", "test", "-Dtest=CharacterBuilderTest", "-Dcheckstyle.skip"],
+            "regex": "Tests run: (\\d+), Failures: (\\d+), Errors: (\\d+), Skipped: (\\d+)$"
+        }
+    ]
 }
