@@ -1,16 +1,16 @@
-from dataclasses import dataclass
-import re
-from typing import Any
-import logging
 import csv
-import os
-import subprocess
 import datetime
+import logging
+import os
+import re
+import subprocess
+from dataclasses import dataclass, fields
+from typing import Any
 
+from spr.cistats import CommitsStats, collect_commits_stats_from_repository
 from spr.config import CONFIG
-from spr.student import Student
 from spr.grade import Grade
-from spr.cistats import collect_commits_stats_from_repository, CommitsStats
+from spr.student import Student
 
 NO_NUMBER = "NO_NUMBER"
 NO_LASTNAME = "NO_LASTNAME"
@@ -91,9 +91,10 @@ class Evaluation:
         values = list(attributes.values()) + self.evaluations
         return values[index]
 
-    def headers(self) -> list[str]:
-        """Get the headers of the evaluation."""
-        headers = [k for k in vars(self).keys() if k != "evaluations"]
+    @classmethod
+    def headers(cls) -> list[str]:
+        """Get the headers for evaluations."""
+        headers = [f.name for f in fields(cls) if f.name != "evaluations"]
         for cmd in CONFIG.commands:
             headers.append(cmd["name"])
             if cmd["regex"]:
@@ -191,5 +192,5 @@ def find_student_with_grade(grade: Grade, students: list[Student]) -> Student:
 def write_evaluations(evaluations: list[Evaluation], evaluations_filename: str) -> None:
     with open(evaluations_filename, "w", newline="") as evaluations_file:
         evaluations_writer = csv.writer(evaluations_file)
-        evaluations_writer.writerow(evaluations[0].headers())
+        evaluations_writer.writerow(Evaluation.headers())
         evaluations_writer.writerows(evaluations)  # type: ignore
