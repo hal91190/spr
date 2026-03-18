@@ -11,9 +11,7 @@ from spr.student import load_students
 
 
 def main():
-    logging.basicConfig(
-        format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
-    )
+    logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
     logger = logging.getLogger(__name__)
 
     try:

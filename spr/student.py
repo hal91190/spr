@@ -1,5 +1,5 @@
-from dataclasses import dataclass
 import csv
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
@@ -27,10 +27,21 @@ def load_students(students_filename: str) -> list[Student]:
     Returns:
         (list[Student]): the list of students
     """
-    students = []
-    with open(students_filename) as students_file:
-        students_reader = csv.reader(students_file, delimiter=",", quotechar='"')
-        students_reader.__next__()  # ignore the header line
-        for student in students_reader:
-            students.append(Student(student[0], student[1], student[2]))
+    students: list[Student] = []
+    try:
+        with open(students_filename, newline="", encoding="utf-8-sig") as students_file:
+            students_reader = csv.reader(students_file, delimiter=",", quotechar='"')
+            if next(students_reader, None) is None:  # skip header, handle empty file
+                raise ValueError(
+                    "Students file '%s' is empty or missing header", students_filename
+                )
+
+            for row in students_reader:
+                students.append(Student(row[0], row[1], row[2]))
+
+    except FileNotFoundError as e:
+        raise FileNotFoundError(
+            f"Students file '{students_filename}' not found. Need the list of students as a CSV file from MonDossierWeb"
+        ) from e
+
     return students
