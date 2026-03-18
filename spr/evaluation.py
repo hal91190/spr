@@ -8,7 +8,7 @@ from dataclasses import dataclass, fields
 from typing import Any
 
 from spr.cistats import CommitsStats, collect_commits_stats_from_repository
-from spr.config import CONFIG
+from spr.config import Config
 from spr.grade import Grade
 from spr.student import Student
 
@@ -92,10 +92,10 @@ class Evaluation:
         return values[index]
 
     @classmethod
-    def headers(cls) -> list[str]:
+    def headers(cls, commands: list[dict[str, Any]]) -> list[str]:
         """Get the headers for evaluations."""
         headers = [f.name for f in fields(cls) if f.name != "evaluations"]
-        for cmd in CONFIG.commands:
+        for cmd in commands:
             headers.append(cmd["name"])
             if cmd["regex"]:
                 nb_groups = re.compile(cmd["regex"]).groups
@@ -104,7 +104,7 @@ class Evaluation:
 
 
 def evaluate_repositories(
-    students: list[Student], grades: list[Grade]
+    students: list[Student], grades: list[Grade], config: Config
 ) -> list[Evaluation]:
     """Run a list of commands in students repositories and collect results."""
     logger = logging.getLogger(__name__)
@@ -114,21 +114,23 @@ def evaluate_repositories(
         if os.path.isdir(grade.repository_name):
             logger.info("Evaluating %s for %s", grade.repository_name, student)
             ci_stats = collect_commits_stats_from_repository(grade.repository_name)
-            result = evaluate_repository(student, grade.repository_name)
+            result = evaluate_repository(student, grade.repository_name, config)
             evaluations.append(Evaluation(student, grade, ci_stats, result))
         else:
             logger.fatal("No directory named %s", grade.repository_name)
     return evaluations
 
 
-def evaluate_repository(student: Student, repository_path: str) -> list[int]:
+def evaluate_repository(
+    student: Student, repository_path: str, config: Config
+) -> list[int]:
     """Run a list of commands in a repository and return the number of successful commands."""
     logger = logging.getLogger(__name__)
     current_working_directory = os.getcwd()
     os.chdir(repository_path)
-    environment = os.environ.copy() | CONFIG.environment
+    environment = os.environ.copy() | config.environment
     result = []
-    for command in CONFIG.commands:
+    for command in config.commands:
         result.extend(execute_command(command, environment))
     logger.info("Result for %s = %s", student, result)
     os.chdir(current_working_directory)
@@ -189,8 +191,8 @@ def find_student_with_grade(grade: Grade, students: list[Student]) -> Student:
     return student
 
 
-def write_evaluations(evaluations: list[Evaluation], evaluations_filename: str) -> None:
-    with open(evaluations_filename, "w", newline="") as evaluations_file:
+def write_evaluations(evaluations: list[Evaluation], config: Config) -> None:
+    with open(config.evaluations, "w", newline="") as evaluations_file:
         evaluations_writer = csv.writer(evaluations_file)
-        evaluations_writer.writerow(Evaluation.headers())
+        evaluations_writer.writerow(Evaluation.headers(config.commands))
         evaluations_writer.writerows(evaluations)  # type: ignore

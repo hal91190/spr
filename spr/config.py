@@ -1,6 +1,6 @@
-from typing import Any
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
+from typing import Any
 
 CONFIG_FILENAME = "spr.json"
 
@@ -25,12 +25,36 @@ class Config:
     "List of commands to execute to evaluate each repository"
 
 
-def load_config(filename: str) -> Config:
-    """Load the configuration from a json file."""
-    with open(filename, "r") as file:
-        config_json = json.load(file)
+def load_config(config_file: str = CONFIG_FILENAME) -> Config:
+    """Load the configuration from a JSON file.
+
+    Args:
+        config_file: Path to the configuration file.
+
+    Returns:
+        Config object with validated settings.
+
+    Raises:
+        FileNotFoundError: If configuration file doesn't exist.
+        ValueError: If JSON is invalid or required fields are missing.
+    """
+
+    try:
+        with open(config_file, "r") as file:
+            config_json = json.load(file)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Configuration file '{config_file}' not found.")
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Error parsing configuration file '{config_file}': {e}")
+
+    # Validate required fields
+    required_fields = {"students", "grades", "evaluations", "environment", "commands"}
+    json_fields = set(config_json.keys())
+    missing_fields = required_fields - json_fields
+    if missing_fields:
+        raise ValueError(f"Missing required configuration fields: {missing_fields}")
+    other_fields = json_fields - required_fields
+    if other_fields:
+        raise ValueError(f"Unexpected fields in configuration: {other_fields}")
 
     return Config(**config_json)
-
-
-CONFIG = load_config(CONFIG_FILENAME)

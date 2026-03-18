@@ -8,6 +8,9 @@ Le projet est géré avec [uv](https://docs.astral.sh/uv/).
 spr
 ```
 
+### Fichiers nécessaires dans le répertoire d'exécution
+TODO
+
 ## Packaging
 
 ### Création de l'environnement virtuel
