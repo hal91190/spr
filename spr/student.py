@@ -33,7 +33,7 @@ def load_students(students_filename: str) -> list[Student]:
             students_reader = csv.reader(students_file, delimiter=",", quotechar='"')
             if next(students_reader, None) is None:  # skip header, handle empty file
                 raise ValueError(
-                    "Students file '%s' is empty or missing header", students_filename
+                    f"Students file '{students_filename}' is empty or missing header"
                 )
 
             for row in students_reader:

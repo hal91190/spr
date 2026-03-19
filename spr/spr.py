@@ -11,24 +11,26 @@ from spr.student import load_students
 
 
 def main():
-    logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
+    logging.basicConfig(
+        format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
+    )
     logger = logging.getLogger(__name__)
 
     try:
-        CONFIG = load_config()
-        logger.debug(CONFIG)
+        config = load_config()
+        logger.debug(config)
 
-        students = load_students(CONFIG.students)
+        students = load_students(config.students)
         logger.info("%d students loaded from csv file", len(students))
         logger.debug(students)
 
-        grades = load_grades(CONFIG.grades)
+        grades = load_grades(config.grades)
         logger.info("%d grades loaded from csv file", len(grades))
         logger.debug(grades)
 
-        evaluations = evaluate_repositories(students, grades, CONFIG)
+        evaluations = evaluate_repositories(students, grades, config)
         logger.debug(evaluations)
-        write_evaluations(evaluations, CONFIG)
+        write_evaluations(evaluations, config)
     except Exception as e:
         logger.error("An error occurred: %s", e)
 
