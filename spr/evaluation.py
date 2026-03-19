@@ -1,12 +1,15 @@
 import csv
 import datetime
 import logging
-import os
 import re
 from dataclasses import dataclass, fields
 from typing import Any
 
-from spr.cistats import CommitsStats, collect_commits_stats_from_repository
+from spr.cistats import (
+    CommitsStats,
+    is_a_git_repository,
+    collect_commits_stats_from_repository,
+)
 from spr.config import Config
 from spr.grade import Grade
 from spr.student import Student
@@ -108,16 +111,16 @@ def evaluate_repositories(
 ) -> list[Evaluation]:
     """Run a list of commands in students repositories and collect results."""
     logger = logging.getLogger(__name__)
-    evaluations = []
+    evaluations: list[Evaluation] = []
     for grade in grades:
         student = find_student_with_grade(grade, students)
-        if os.path.isdir(grade.repository_name):
+        if is_a_git_repository(grade.repository_name):
             logger.info("Evaluating %s for %s", grade.repository_name, student)
             ci_stats = collect_commits_stats_from_repository(grade.repository_name)
             result = evaluate_repository(student, grade.repository_name, config)
             evaluations.append(Evaluation(student, grade, ci_stats, result))
         else:
-            logger.fatal("No directory named %s", grade.repository_name)
+            logger.error("No git repository named %s", grade.repository_name)
     return evaluations
 
 
@@ -145,7 +148,9 @@ def find_student_with_grade(grade: Grade, students: list[Student]) -> Student:
 
 
 def write_evaluations(evaluations: list[Evaluation], config: Config) -> None:
-    with open(config.evaluations, "w", newline="") as evaluations_file:
+    with open(
+        config.evaluations, "w", newline="", encoding="utf-8"
+    ) as evaluations_file:
         evaluations_writer = csv.writer(evaluations_file)
         evaluations_writer.writerow(Evaluation.headers(config.commands))
         evaluations_writer.writerows(evaluations)  # type: ignore

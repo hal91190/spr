@@ -36,6 +36,11 @@ class CommitsStats:
         return f"CommitsStats({self.nb_commits}, {self.first_commit_datetime}, {self.last_commit_datetime}, {self.min_time_between_commits}, {self.avg_time_between_commits}, {self.avg_msg_length})"
 
 
+def is_a_git_repository(path: str | os.PathLike) -> bool:
+    """Check if a path is a git repository."""
+    return os.path.isdir(os.path.join(path, ".git"))
+
+
 def collect_commits_stats_from_repository(
     repository_path: str | os.PathLike,
 ) -> CommitsStats:
@@ -104,6 +109,8 @@ def collect_commits_stats_from_repository(
     avg_time_between_commits = sum_time_between_commits / (
         nb_commits - 1 if nb_commits > 1 else 1
     )
+    if nb_commits < 2:
+        min_time_between_commits = -1
     cstats = CommitsStats(
         nb_commits,
         first_commit_datetime,
