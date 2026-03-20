@@ -1,5 +1,6 @@
 import logging
 import os
+from pathlib import Path
 import re
 import subprocess
 from typing import Any
@@ -13,20 +14,20 @@ def evaluate_repository(
 ) -> list[int]:
     """Run a list of commands in a repository and return the number of successful commands."""
     logger = logging.getLogger(__name__)
-    current_working_directory = os.getcwd()
-    os.chdir(repository_path)
     environment = os.environ.copy() | config.environment
     result = []
     for command in config.commands:
-        result.extend(execute_command(command, environment))
+        result.extend(execute_command(command, repository_path, environment))
     logger.info("Result for %s = %s", student, result)
-    os.chdir(current_working_directory)
     return result
 
 
-def execute_command(command: dict[str, Any], environment: dict[str, str]) -> list[int]:
+def execute_command(
+    command: dict[str, Any], path: str, environment: dict[str, str]
+) -> list[int]:
     """Run a command and get a result."""
     logger = logging.getLogger(__name__)
+    path_to_run = Path(".") / path
     stdout_redir = subprocess.DEVNULL
     stderr_redir = subprocess.DEVNULL
     if command["regex"]:
@@ -34,14 +35,16 @@ def execute_command(command: dict[str, Any], environment: dict[str, str]) -> lis
         stderr_redir = subprocess.STDOUT
     completed_process = subprocess.run(
         command["cmd"],
+        cwd=path_to_run.resolve(),
         stdout=stdout_redir,
         stderr=stderr_redir,
         env=environment,
+        text=True,
     )
     result = [1] if completed_process.returncode == 0 else [0]
     found_groups = None
     if command["regex"]:
-        for line in completed_process.stdout.decode().split("\n"):
+        for line in completed_process.stdout.split("\n"):
             logger.debug("%s", line)
             match = re.search(command["regex"], line)
             if match:

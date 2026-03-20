@@ -117,7 +117,11 @@ def evaluate_repositories(
         if is_a_git_repository(grade.repository_name):
             logger.info("Evaluating %s for %s", grade.repository_name, student)
             ci_stats = collect_commits_stats_from_repository(grade.repository_name)
-            result = evaluate_repository(student, grade.repository_name, config)
+            result = (
+                evaluate_repository(student, grade.repository_name, config)
+                if ci_stats.nb_commits > 0
+                else []
+            )
             evaluations.append(Evaluation(student, grade, ci_stats, result))
         else:
             logger.error("No git repository named %s", grade.repository_name)
