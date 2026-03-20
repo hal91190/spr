@@ -21,6 +21,9 @@ class Config:
     environment: dict[str, str]
     "List of environment variables"
 
+    ci_ranges: list[dict[str, Any]]
+    "List of datetime ranges to count commits"
+
     commands: list[dict[str, Any]]
     "List of commands to execute to evaluate each repository"
 
@@ -49,11 +52,12 @@ def load_config(config_file: str = CONFIG_FILENAME) -> Config:
 
     # Validate required fields
     required_fields = {"students", "grades", "evaluations", "environment", "commands"}
+    options_fields = {"ci_ranges"}
     json_fields = set(config_json.keys())
     missing_fields = required_fields - json_fields
     if missing_fields:
         raise ValueError(f"Missing required configuration fields: {missing_fields}")
-    other_fields = json_fields - required_fields
+    other_fields = json_fields - required_fields - options_fields
     if other_fields:
         raise ValueError(f"Unexpected fields in configuration: {other_fields}")
 

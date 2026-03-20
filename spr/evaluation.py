@@ -45,6 +45,9 @@ class Evaluation:
     nb_commits: int
     "Number of commits"
 
+    nb_commits_in_ranges: list[int]
+    "Number of commits in each ranges defined in the config file"
+
     first_commit_datetime: datetime.datetime
     "Timestamp of the first commit"
 
@@ -74,6 +77,7 @@ class Evaluation:
         self.repository_name = grade.repository_name
         self.repository_url = grade.repository_url
         self.nb_commits = ci_stats.nb_commits
+        self.nb_commits_in_ranges = ci_stats.nb_commits_in_ranges
         self.first_commit_datetime = ci_stats.first_commit_datetime
         self.last_commit_datetime = ci_stats.last_commit_datetime
         self.min_time_between_commits = ci_stats.min_time_between_commits
@@ -90,14 +94,27 @@ class Evaluation:
         Returns:
             Any: the value of the attribute
         """
-        attributes = {k: v for k, v in vars(self).items() if k != "evaluations"}
-        values = list(attributes.values()) + self.evaluations
+        attributes = {
+            k: v
+            for k, v in vars(self).items()
+            if k not in ("evaluations", "nb_commits_in_ranges")
+        }
+        values = (
+            list(attributes.values()) + self.nb_commits_in_ranges + self.evaluations
+        )
         return values[index]
 
     @classmethod
-    def headers(cls, commands: list[dict[str, Any]]) -> list[str]:
+    def headers(
+        cls, ci_ranges: list[dict[str, Any]], commands: list[dict[str, Any]]
+    ) -> list[str]:
         """Get the headers for evaluations."""
-        headers = [f.name for f in fields(cls) if f.name != "evaluations"]
+        headers = [
+            f.name
+            for f in fields(cls)
+            if f.name not in ("evaluations", "nb_commits_in_ranges")
+        ]
+        headers.extend([f"{h['name']}" for h in ci_ranges])
         for cmd in commands:
             headers.append(cmd["name"])
             if cmd["regex"]:
@@ -116,7 +133,10 @@ def evaluate_repositories(
         student = find_student_with_grade(grade, students)
         if is_a_git_repository(grade.repository_name):
             logger.info("Evaluating %s for %s", grade.repository_name, student)
-            ci_stats = collect_commits_stats_from_repository(grade.repository_name)
+            ci_ranges = convert_ci_ranges(config.ci_ranges)
+            ci_stats = collect_commits_stats_from_repository(
+                grade.repository_name, ci_ranges
+            )
             result = (
                 evaluate_repository(student, grade.repository_name, config)
                 if ci_stats.nb_commits > 0
@@ -126,6 +146,18 @@ def evaluate_repositories(
         else:
             logger.error("No git repository named %s", grade.repository_name)
     return evaluations
+
+
+def convert_ci_ranges(
+    ci_ranges: list[dict[str, Any]],
+) -> list[tuple[datetime.datetime, datetime.datetime]]:
+    """Convert ci_ranges from config file to a list of tuples of datetimes."""
+    converted_ci_ranges: list[tuple[datetime.datetime, datetime.datetime]] = []
+    for ci_range in ci_ranges:
+        start = datetime.datetime.fromisoformat(ci_range["start"])
+        end = datetime.datetime.fromisoformat(ci_range["end"])
+        converted_ci_ranges.append((start, end))
+    return converted_ci_ranges
 
 
 def find_student_with_grade(grade: Grade, students: list[Student]) -> Student:
@@ -156,5 +188,7 @@ def write_evaluations(evaluations: list[Evaluation], config: Config) -> None:
         config.evaluations, "w", newline="", encoding="utf-8"
     ) as evaluations_file:
         evaluations_writer = csv.writer(evaluations_file)
-        evaluations_writer.writerow(Evaluation.headers(config.commands))
+        evaluations_writer.writerow(
+            Evaluation.headers(config.ci_ranges, config.commands)
+        )
         evaluations_writer.writerows(evaluations)  # type: ignore
